@@ -5,6 +5,7 @@ CREATE TABLE contacts (
                           phone_number VARCHAR(255) NOT NULL,
                           employees VARCHAR(255) NOT NULL,
                           coc_number VARCHAR(255) NOT NULL,
+                         vat_number VARCHAR(255) NOT NULL,
                           iban_number VARCHAR(255) NOT NULL,
                           description TEXT NOT NULL,
                           budget DOUBLE

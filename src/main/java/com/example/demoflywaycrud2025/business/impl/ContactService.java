@@ -1,14 +1,25 @@
-package com.example.flywaydemo.business;
+package com.example.demoflywaycrud2025.business.impl;
 
-import com.example.flywaydemo.domain.dto.ContactDTO;
-import com.example.flywaydemo.domain.request.CreateContactRequest;
-import com.example.flywaydemo.domain.responses.CreateContactResponse;
+
+import com.example.demoflywaycrud2025.domain.dto.ContactDTO;
+import com.example.demoflywaycrud2025.domain.request.CreateContactRequest;
+import com.example.demoflywaycrud2025.domain.response.ContactResponse;
+
+import java.util.List;
 
 public interface ContactService {
 
-    CreateContactResponse createContact(CreateContactRequest request);
+    ContactResponse createContact(CreateContactRequest request);
 
-    ContactDTO getContactById(Long id);
+    ContactDTO getContactById(String id);
 
-    ContactDTO UpdateContactById(Long id, CreateContactRequest request);
+    ContactDTO UpdateContactById(String id, CreateContactRequest request);
+
+    // gerAllContacts
+
+    //ContactDTO getAllContacts();
+
+    public List<ContactDTO> getAllContacts();
+
+    public List<ContactResponse> createContactsBulk(List<CreateContactRequest> requests);
 }

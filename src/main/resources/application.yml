@@ -1,0 +1,14 @@
+#spring:
+#  data:
+#    mongodb:
+#      host: mongo
+#      port: 27017
+#      database: demo-flywaycrud-2025
+#      uri: mongodb://mongo:27017/demo-flywaycrud-2025
+#
+#  flyway:
+#    url: jdbc:mongo://mongo:27017/demo-flywaycrud-2025
+#    driver-class-name: com.dbschema.MongoJdbcDriver
+#    locations: classpath:db/migration
+#    baseline-on-migrate: true
+#    sql-migration-suffixes: .js

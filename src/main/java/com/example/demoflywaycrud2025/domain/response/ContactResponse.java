@@ -9,10 +9,11 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ContactResposes {
+public class ContactResponse {
 
-    private long id;
+    private String id;
     private String name;
+    private String message;
     private String email;
     private String phone_number;
     private String employees;

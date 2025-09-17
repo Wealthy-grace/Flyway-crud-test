@@ -1,79 +1,128 @@
-package com.example.flywaydemo.business.impl;
 
-import com.example.flywaydemo.business.ContactService;
-import com.example.flywaydemo.configuration.exceptions.ContactAlreadyExistsException;
-import com.example.flywaydemo.domain.dto.ContactDTO;
-import com.example.flywaydemo.domain.request.CreateContactRequest;
-import com.example.flywaydemo.domain.responses.CreateContactResponse;
-import com.example.flywaydemo.persistence.entity.ContactEntity;
-import com.example.flywaydemo.persistence.repository.ContactRepository;
+
+package com.example.demoflywaycrud2025.business.impl;
+
+import com.example.demoflywaycrud2025.configuration.exceptions.ContactAlreadyExistsException;
+import com.example.demoflywaycrud2025.configuration.exceptions.ContactNotFoundException;
+import com.example.demoflywaycrud2025.domain.dto.ContactDTO;
+import com.example.demoflywaycrud2025.domain.request.CreateContactRequest;
+import com.example.demoflywaycrud2025.domain.response.ContactResponse;
+import com.example.demoflywaycrud2025.persistence.entity.Contact;
+import com.example.demoflywaycrud2025.persistence.repository.ContactRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class ContactServiceImpl implements ContactService {
 
     private final ContactRepository contactRepository;
+
     @Override
-    public CreateContactResponse createContact(CreateContactRequest request) {
-        // Check for duplicate contact using enhanced validation
+    public ContactResponse createContact(CreateContactRequest request) {
         checkIfContactExists(request);
 
-        // Map request to Contact entity
-        ContactEntity contactEntity = MaptoRequest(MapToContactDTO(request));
+        Contact contactEntity = mapToEntity(mapToDTO(request));
 
-        // Save contact to the repository
-        ContactEntity savedContact = contactRepository.save(contactEntity);
+        Contact savedContact = contactRepository.save(contactEntity);
 
-        // Return response with the new contact ID and success message
-        return CreateContactResponse.builder()
-                .id(savedContact.getId())
-                .message("Contact created successfully")
-                .build();
-    }
-
-    // Method to check if the contact already exists
-    private boolean contactExists(CreateContactRequest request) {
-        return contactRepository.existsByTelephoneNumber(request.getTelephoneNumber());
-    }
-
-    // Method to map CreateContactRequest to Contact entity
-
-
-
-    @Override
-    public ContactDTO getContactById(Long id) {
-        return null;
+        return buildContactResponse(savedContact, "Contact created successfully");
     }
 
     @Override
-    public ContactDTO UpdateContactById(Long id, CreateContactRequest request) {
-        return null;
+    public List<ContactResponse> createContactsBulk(List<CreateContactRequest> requests) {
+        // Check for duplicates for each request before saving
+        requests.forEach(this::checkIfContactExists);
+
+        List<Contact> contacts = requests.stream()
+                .map(r -> mapToEntity(mapToDTO(r)))
+                .collect(Collectors.toList());
+
+        List<Contact> savedContacts = contactRepository.saveAll(contacts);
+
+        return savedContacts.stream()
+                .map(c -> buildContactResponse(c, "Contact created successfully"))
+                .collect(Collectors.toList());
     }
 
+    @Override
+    public ContactDTO getContactById(String id) {
+        Contact contact = contactRepository.findById(id)
+                .orElseThrow(() -> new ContactNotFoundException("Contact not found with ID: " + id));
 
-    public ContactDTO MapToContactDTO(CreateContactRequest request) {
-        return  ContactDTO.builder()
+        return mapToDTO(contact);
+    }
 
+    @Override
+    public List<ContactDTO> getAllContacts() {
+        return contactRepository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public ContactDTO UpdateContactById(String id, CreateContactRequest request) {
+        Contact contact = contactRepository.findById(id)
+                .orElseThrow(() -> new ContactNotFoundException("Contact not found with ID: " + id));
+
+        // Update fields
+        contact.setCompanyName(request.getCompanyName());
+        contact.setEmail(request.getEmailAddress());
+        contact.setPhoneNumber(request.getPhone_number());
+        contact.setEmployees(request.getEmployees());
+        contact.setCocNumber(request.getCoc_number());
+        contact.setVatNumber(request.getVat_number());
+        contact.setIbanNumber(request.getIbanNumber());
+        contact.setDescription(request.getDescription());
+        contact.setBudget(request.getBudget());
+
+        Contact updatedContact = contactRepository.save(contact);
+
+        return mapToDTO(updatedContact);
+    }
+
+    // Mapping CreateContactRequest to ContactDTO
+    private ContactDTO mapToDTO(CreateContactRequest request) {
+        return ContactDTO.builder()
                 .companyName(request.getCompanyName())
                 .emailAddress(request.getEmailAddress())
-                .telephoneNumber(request.getTelephoneNumber())
+                .phoneNumber(request.getPhone_number())
                 .employees(request.getEmployees())
-                .cocNumber(request.getCocNumber())
-                .vatNumber(request.getVatNumber())
+                .cocNumber(request.getCoc_number())
+                .vatNumber(request.getVat_number())
                 .ibanNumber(request.getIbanNumber())
                 .description(request.getDescription())
                 .budget(request.getBudget())
                 .build();
     }
 
-    private ContactEntity MaptoRequest(ContactDTO contactDTO) {
-        return  ContactEntity.builder()
+    // Mapping Contact entity to ContactDTO
+    private ContactDTO mapToDTO(Contact contact) {
+        return ContactDTO.builder()
+                .id(contact.getId())
+                .companyName(contact.getCompanyName())
+                .emailAddress(contact.getEmail())
+                .phoneNumber(contact.getPhoneNumber())
+                .employees(contact.getEmployees())
+                .cocNumber(contact.getCocNumber())
+                .vatNumber(contact.getVatNumber())
+                .ibanNumber(contact.getIbanNumber())
+                .description(contact.getDescription())
+                .budget(contact.getBudget())
+                .build();
+    }
+
+    // Mapping ContactDTO to Contact entity
+    private Contact mapToEntity(ContactDTO contactDTO) {
+        return Contact.builder()
                 .id(contactDTO.getId())
                 .companyName(contactDTO.getCompanyName())
                 .email(contactDTO.getEmailAddress())
-                .telephoneNumber(contactDTO.getTelephoneNumber())
+                .phoneNumber(contactDTO.getPhoneNumber())
                 .employees(contactDTO.getEmployees())
                 .cocNumber(contactDTO.getCocNumber())
                 .vatNumber(contactDTO.getVatNumber())
@@ -83,41 +132,42 @@ public class ContactServiceImpl implements ContactService {
                 .build();
     }
 
-
-    // Methos for check if contact already exists
+    private ContactResponse buildContactResponse(Contact contact, String message) {
+        return ContactResponse.builder()
+                .id(contact.getId())
+                .name(contact.getCompanyName())
+                .email(contact.getEmail())
+                .phone_number(contact.getPhoneNumber())
+                .employees(contact.getEmployees())
+                .coc_number(contact.getCocNumber())
+                .vat_number(contact.getVatNumber())
+                .budget(contact.getBudget())
+                .iban_number(contact.getIbanNumber())
+                .description(contact.getDescription())
+                .message(message)
+                .build();
+    }
 
     private void checkIfContactExists(CreateContactRequest request) {
-
-
         if (contactRepository.existsByCompanyName(request.getCompanyName())) {
             throw new ContactAlreadyExistsException(
                     "Contact already exists with the company name: " + request.getCompanyName());
         }
-
-        if(contactRepository.existsByTelephoneNumber(request.getTelephoneNumber())) {
+        if (contactRepository.existsByPhoneNumber(request.getPhone_number())) {
             throw new ContactAlreadyExistsException(
-                    "Contact already exists with the telephone number: " + request.getTelephoneNumber());
+                    "Contact already exists with the telephone number: " + request.getPhone_number());
         }
-
-        if(contactRepository.existsByEmployees(request.getEmployees())) {
+        if (contactRepository.existsByEmployees(request.getEmployees())) {
             throw new ContactAlreadyExistsException(
                     "Contact already exists with the employees: " + request.getEmployees());
-
         }
-        if (contactRepository.existsByCocNumber(request.getCocNumber())) {
+        if (contactRepository.existsByCocNumber(request.getCoc_number())) {
             throw new ContactAlreadyExistsException(
-                    "Contact already exists with the CoC number: " + request.getCocNumber());
+                    "Contact already exists with the CoC number: " + request.getCoc_number());
         }
-        if (contactRepository.existsByVatNumber(request.getVatNumber())) {
+        if (contactRepository.existsByVatNumber(request.getVat_number())) {
             throw new ContactAlreadyExistsException(
-                    "Contact already exists with the VAT number: " + request.getVatNumber());
+                    "Contact already exists with the VAT number: " + request.getVat_number());
         }
-
-
-
     }
-
-
-
 }
-

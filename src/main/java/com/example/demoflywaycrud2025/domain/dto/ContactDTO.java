@@ -1,4 +1,4 @@
-package com.example.flywaydemo.domain.dto;
+package com.example.demoflywaycrud2025.domain.dto;
 
 
 import lombok.AllArgsConstructor;
@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ContactDTO {
-    private Long id;
+    private String id;
     private String companyName;
     private String emailAddress;
-    private String telephoneNumber;
+    private String phoneNumber;
     private String employees;
     private String cocNumber;
     private String vatNumber;

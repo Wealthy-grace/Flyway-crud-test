@@ -1,5 +1,5 @@
 
-package com.example.flywaydemo.domain.request;
+package com.example.demoflywaycrud2025.domain.request;
 
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -25,7 +25,7 @@ public class CreateContactRequest {
     @NotBlank
     @NotBlank(message = "Telephone number is required")
     @Pattern(regexp = "^(?:\\+31|0)[1-9]\\d{8}$", message = "Telephone number must be a valid Dutch phone number")
-    private String telephoneNumber;
+    private String phone_number;
 
     @NotBlank(message = "Number of employees is required")
     @Pattern(regexp = "^\\d+-\\d+$|^\\d+\\+$", message = "Employees must be in format '10-50' or '100+'")
@@ -33,11 +33,11 @@ public class CreateContactRequest {
 
     @NotBlank(message = "KvK number is required")
     @Pattern(regexp = "^\\d{8}$", message = "KvK number must be an 8-digit number")
-    private String cocNumber;
+    private String coc_number;
 
     @NotBlank(message = "VAT number is required")
    @Pattern(regexp = "^NL\\d{9}B\\d{2}$", message = "VAT number must be in the format NL123456789B01")
-    private String vatNumber;
+    private String vat_number;
 
     @NotBlank(message = "IBAN is required")
     @Pattern(regexp = "^NL\\d{2}[A-Z]{4}\\d{10}$", message = "IBAN must be a valid Dutch IBAN")

@@ -1,6 +1,7 @@
-package com.example.flywaydemo.configuration;
+package com.example.demoflywaycrud2025.configuration;
 
-import com.example.flywaydemo.configuration.exceptions.ContactAlreadyExistsException;
+
+import com.example.demoflywaycrud2025.configuration.exceptions.ContactAlreadyExistsException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;

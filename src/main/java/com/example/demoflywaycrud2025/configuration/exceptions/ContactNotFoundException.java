@@ -1,4 +1,4 @@
-package com.example.flywaydemo.configuration.exceptions;
+package com.example.demoflywaycrud2025.configuration.exceptions;
 
 public class ContactNotFoundException extends RuntimeException {
     public ContactNotFoundException(String message) {
