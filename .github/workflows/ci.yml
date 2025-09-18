@@ -28,7 +28,7 @@ jobs:
       # 4️⃣ Build and start services
       - name: Build and start Docker Compose services
         run: |
-          docker-compose up --build -d
+          docker compose up --build -d
           echo "Waiting for services to start..."
           sleep 10
 
@@ -142,7 +142,7 @@ jobs:
         if: failure()
         run: |
           echo "Generating logs for debugging..."
-          docker-compose logs > docker-compose-logs.txt
+          docker compose logs > docker-compose-logs.txt
           docker ps -a
           docker images
 
@@ -151,7 +151,7 @@ jobs:
         if: always()
         run: |
           echo "Cleaning up Docker Compose services..."
-          docker-compose down -v --remove-orphans
+          docker compose down -v --remove-orphans
           docker system prune -f
 
   # Optional: Add a deployment job that runs only on main branch
