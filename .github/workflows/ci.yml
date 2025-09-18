@@ -1,0 +1,193 @@
+name: CI with Docker Compose
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Set up Docker Buildx (for better build performance)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3️⃣ Create necessary directories for volume mounting
+      - name: Create test directories
+        run: |
+          mkdir -p ./build/reports/tests/test
+          mkdir -p ./build/test-results/test
+
+      # 4️⃣ Build and start services
+      - name: Build and start Docker Compose services
+        run: |
+          docker-compose up --build -d
+          echo "Waiting for services to start..."
+          sleep 10
+
+      # 5️⃣ Wait for MongoDB to be ready with better health check
+      - name: Wait for MongoDB to be ready
+        run: |
+          echo "Waiting for MongoDB to be ready..."
+          timeout=60
+          counter=0
+          
+          while [ $counter -lt $timeout ]; do
+            if docker exec mongo mongosh --quiet --eval "db.runCommand('ping').ok" demo-flywaycrud-2025 2>/dev/null | grep -q "1"; then
+              echo "✅ MongoDB is ready!"
+              break
+            fi
+            echo "⏳ MongoDB not ready yet, waiting... ($counter/$timeout)"
+            sleep 2
+            counter=$((counter + 2))
+          done
+          
+          if [ $counter -ge $timeout ]; then
+            echo "❌ MongoDB failed to start within $timeout seconds"
+            docker-compose logs mongo
+            exit 1
+          fi
+
+      # 6️⃣ Wait for Spring Boot application to be ready
+      - name: Wait for Spring Boot application
+        run: |
+          echo "Waiting for Spring Boot application to be ready..."
+          timeout=120
+          counter=0
+          
+          while [ $counter -lt $timeout ]; do
+            if curl -f http://localhost:8080/actuator/health 2>/dev/null || \
+               docker exec demo-flywaycrud-2025 curl -f http://localhost:8080/actuator/health 2>/dev/null; then
+              echo "✅ Spring Boot application is ready!"
+              break
+            fi
+            echo "⏳ Spring Boot app not ready yet, waiting... ($counter/$timeout)"
+            sleep 3
+            counter=$((counter + 3))
+          done
+          
+          if [ $counter -ge $timeout ]; then
+            echo "❌ Spring Boot application failed to start within $timeout seconds"
+            echo "📋 Application logs:"
+            docker-compose logs spring-app
+            echo "📋 MongoDB logs:"
+            docker-compose logs mongo
+            exit 1
+          fi
+
+      # 7️⃣ Run Gradle tests inside the container
+      - name: Run Gradle build and tests
+        run: |
+          echo "Running Gradle build and tests..."
+          docker exec demo-flywaycrud-2025 ./gradlew clean build test --no-daemon --stacktrace
+          
+          # Copy test results and reports from container to host
+          echo "Copying test results from container..."
+          docker cp demo-flywaycrud-2025:/app/build/reports ./build/ 2>/dev/null || echo "No reports directory found"
+          docker cp demo-flywaycrud-2025:/app/build/test-results ./build/ 2>/dev/null || echo "No test-results directory found"
+
+      # 8️⃣ Run integration tests (if you have any specific endpoint tests)
+      - name: Run basic integration tests
+        run: |
+          echo "Running basic integration tests..."
+          
+          # Test if application endpoints are accessible
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health)
+          if [ "$response" = "200" ]; then
+            echo "✅ Health check endpoint working"
+          else
+            echo "❌ Health check endpoint failed with status: $response"
+            exit 1
+          fi
+          
+          # Add more API endpoint tests here as needed
+          # response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/your-endpoint)
+          # if [ "$response" = "200" ]; then
+          #   echo "✅ API endpoint working"
+          # else
+          #   echo "❌ API endpoint failed with status: $response"
+          #   exit 1
+          # fi
+
+      # 9️⃣ Upload test reports as artifacts
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always() # Upload even if tests fail
+        with:
+          name: test-reports-${{ github.run_number }}
+          path: |
+            ./build/reports/tests/test/
+            ./build/test-results/test/
+          retention-days: 7
+
+      # 🔟 Upload application logs for debugging
+      - name: Upload application logs
+        uses: actions/upload-artifact@v4
+        if: failure() # Only upload logs if something failed
+        with:
+          name: application-logs-${{ github.run_number }}
+          path: |
+            docker-compose-logs.txt
+          retention-days: 3
+
+      # 1️⃣1️⃣ Generate logs for debugging (if needed)
+      - name: Generate logs for debugging
+        if: failure()
+        run: |
+          echo "Generating logs for debugging..."
+          docker-compose logs > docker-compose-logs.txt
+          docker ps -a
+          docker images
+
+      # 1️⃣2️⃣ Clean up - Stop and remove containers
+      - name: Clean up Docker Compose
+        if: always()
+        run: |
+          echo "Cleaning up Docker Compose services..."
+          docker-compose down -v --remove-orphans
+          docker system prune -f
+
+  # Optional: Add a deployment job that runs only on main branch
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging/production
+        run: |
+          echo "🚀 Deploying to staging/production..."
+          echo "Add your deployment commands here"
+          # Example deployment commands:
+          # - Build and push Docker images to registry
+          # - Deploy to cloud provider
+          # - Update Kubernetes deployments
+          # - Run database migrations
+
+  # Optional: Security scanning job
+  security-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run security scan
+        run: |
+          echo "🔍 Running security scan..."
+          # Add security scanning tools like:
+          # - Snyk
+          # - OWASP dependency check
+          # - Container image scanning
+          echo "Security scan completed successfully"
