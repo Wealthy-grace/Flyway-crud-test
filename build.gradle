@@ -27,6 +27,7 @@ dependencies {
     // Spring Boot MongoDB & Web
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // Flyway core
     implementation 'org.flywaydb:flyway-core'
@@ -48,6 +49,7 @@ dependencies {
 
     // If you have a local mongo-jdbc-driver jar (put in libs/ folder)
     implementation files('libs/mongo-jdbc-driver-1.0.jar')
+    implementation 'com.dbschema:mongo-jdbc-driver:2.3.1'  // Add this if missing
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
