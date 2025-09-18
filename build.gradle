@@ -1,7 +1,7 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.1.4' // Use latest stable, or your preferred version
-    id 'io.spring.dependency-management' version '1.1.0' // Compatible version
+    id 'org.springframework.boot' version '3.1.4'
+    id 'io.spring.dependency-management' version '1.1.0'
 }
 
 group = 'com.example'
@@ -29,27 +29,22 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-    // Flyway core
+    // Flyway core - for relational DB migration (not MongoDB)
     implementation 'org.flywaydb:flyway-core'
 
     // Validation support
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-    // Lombok
+    // Lombok (optional, for code generation)
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    // MongoDB JDBC Driver for Flyway (choose one approach)
+    // (Optional) If using a Mongo JDBC driver for BI integration
+    // Make sure to use an official, maintained driver found on Maven Central, for example:
+    // implementation 'com.dbvis:mongo-jdbc-standalone:1.19'
 
-    // Option 1: Using DbVis mongo-jdbc-standalone (make sure version is correct in Maven Central)
-    implementation 'com.dbvis:mongo-jdbc-standalone:1.19'
-
-    // Option 2 (commented out): alternative driver if you prefer
-    // implementation 'com.github.kornilova203:mongo-jdbc-driver:1.19'
-
-    // If you have a local mongo-jdbc-driver jar (put in libs/ folder)
-    implementation files('libs/mongo-jdbc-driver-1.0.jar')
-    implementation 'com.dbschema:mongo-jdbc-driver:2.3.1'  // Add this if missing
+    // If you need a local JAR:
+    // implementation files('libs/mongo-jdbc-driver-1.0.jar')
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
