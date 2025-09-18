@@ -1,50 +1,41 @@
-name: CI
+name: CI with Docker Compose
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest  # Linux runner
-
-    # MongoDB service for integration tests
-    services:
-      mongo:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'" 
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+  docker-build:
+    runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
-      - uses: actions/checkout@v2
+      # Checkout the repository
+      - uses: actions/checkout@v3
 
-      # Make gradlew executable (fixes 'Permission denied' on Linux)
-      - name: Grant execute permission to gradlew
-        run: chmod +x ./gradlew
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      # Set up Java 17 with Gradle cache
-      - name: Set up JDK 17
-        uses: actions/setup-java@v2
-        with:
-          java-version: 17
-          distribution: 'temurin'
-          cache: gradle
+      # Build and start Docker Compose services
+      - name: Build and start Docker Compose services
+        run: docker-compose up --build -d
 
-      # Build project and run tests
-      - name: Build with Gradle
-        run: ./gradlew build --scan --no-daemon
+      # Wait for MongoDB to be healthy before running tests
+      - name: Wait for MongoDB
+        run: |
+          echo "Waiting for MongoDB to be ready..."
+          for i in {1..30}; do
+            docker exec mongo mongosh --eval "db.adminCommand('ping')" && break
+            echo "MongoDB not ready yet, sleeping 2 seconds..."
+            sleep 2
+          done
 
-      # Upload test reports
-      - name: Archive test report
-        uses: actions/upload-artifact@v2
-        with:
-          name: Test report
-          path: build/reports/tests/test
+      # Run integration tests inside Spring Boot container
+      - name: Run Spring Boot integration tests
+        run: docker exec demo-flywaycrud-2025 ./gradlew test --no-daemon
+
+      # Optional: Shut down Docker Compose
+      - name: Tear down Docker Compose
+        run: docker-compose down
